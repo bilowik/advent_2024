@@ -1,0 +1,4 @@
+
+
+default:
+	gcc main.c
