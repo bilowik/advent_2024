@@ -36,7 +36,6 @@ int list_destroy(List *self) {
 	free(self->values);
 }
 
-
 // Returns a malloc'd list owned by the caller of this function.
 // The given list wlil have each entry correspond to the given column.
 // line is assumed to be a null-terminated string.
@@ -166,6 +165,44 @@ int main(int argc, char **argv) {
 	}
 
 	printf("%d\n", distance);
+
+	// Now calculate the similarity score.
+	int similarity_score = 0;
+	
+	int prev_value = lists[0].values[0] - 1;
+	int rhs_total = 0;
+	int rhs_idx = 0;
+	int curr_value = 0; 
+	
+	for(int i = 0; (i < lists[0].len) && (rhs_idx < lists[1].len); i++) {
+		curr_value = lists[0].values[i];
+		if(curr_value != prev_value) {
+			// New value, get the number of times this value occurs in 
+			// the next list.
+			rhs_total = 0;
+			while(curr_value >= lists[1].values[rhs_idx]) {
+				// Iterate over values until we reach a value > 
+				// the currrent lhs value. If values are equal
+				// increment the rhs_total.
+				if(curr_value == lists[1].values[rhs_idx]) {
+					rhs_total++;
+				}
+				rhs_idx++;
+				if(rhs_idx >= lists[1].len) {
+					break;	
+				}
+
+			}
+
+		}
+		// In the case where the above condiitonal doesn't run, 
+		// it means the currnet value is the same as the last, so 
+		// the total we want to add will be the same.
+		similarity_score += rhs_total * curr_value;
+		prev_value = curr_value;
+	}
+
+	printf("%d\n", similarity_score);
 
 	for(int i = 0; i < num_lists; i++) {
 		list_destroy(lists + i);
