@@ -1,20 +1,2 @@
-
-
-default:
-	gcc main.c
-
-debug:
-	gcc -g main.c
-
-run: default
-	./a.out ../input.txt
-
-debug-run: debug
-	gdb ./a.out
-
-valgrind-run: debug
-	valgrind --track-origins=yes ./a.out ../input.txt
-
-valgrind-run-full: debug
-	valgrind --leak-check=full --track-origins=yes ./a.out ../input.txt 
+include ../../c_makefile_base
 
