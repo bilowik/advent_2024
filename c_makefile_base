@@ -16,5 +16,5 @@ valgrind-run: debug
 	valgrind --track-origins=yes ./a.out ../input.txt
 
 valgrind-run-full: debug
-	valgrind --leak-check=full --track-origins=yes ./a.out ../input.txt 
+	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./a.out ../input.txt 
 
