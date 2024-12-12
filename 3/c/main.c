@@ -6,7 +6,12 @@ int is_numeral(char c) {
 }
 
 int main(int argc, char *argv[]) {
-	FILE *f = fopen("../input.txt", "r");
+	if(argc < 2) {
+		printf("Missing argument: <PATH>\n");
+		return -1;
+	}
+	
+	FILE *f;
 	char read_chunk[256]; // Holds read in data.
 	int read_chunk_len = 0; // Current size of read-in data 
 	int curr_char = 0; // Stores the current char from the read_chunk
@@ -26,6 +31,10 @@ int main(int argc, char *argv[]) {
 	// 5: Last char was [0-9]
 	int state = 0;
 
+	if((f = fopen(argv[1], "r")) == NULL) {
+		perror("Failed to open input file for processing");
+		return -2;
+	}
 
 	while(fgets(read_chunk, sizeof(read_chunk), f) != NULL) {
 		read_chunk_idx = 0;
@@ -54,6 +63,9 @@ int main(int argc, char *argv[]) {
 					else {
 						// This was an invalid mul operation
 						state = 0;
+						curr_num = 0;
+						arg_count = 0;
+						curr_product = 1;
 					}
 					break;
 				case 5:
@@ -64,7 +76,6 @@ int main(int argc, char *argv[]) {
 					else if(curr_char == ',') {
 						// We've reached the end of this number
 						// Add it to the current product.
-						printf("Found number %d\n", curr_num);
 						curr_product *= curr_num;
 						arg_count++;
 						curr_num = 0;
@@ -72,19 +83,23 @@ int main(int argc, char *argv[]) {
 					}
 					else if((curr_char == ')') && (arg_count > 0)) {
 						// We've reached the end of this mul op and
-						// it is valid.
-						printf("Found number %d\n", curr_num);
+						// it is valid. Go back to state 0.
 						curr_product *= curr_num;
-						printf("Adding product %d\n", curr_product);
 						total_sum += curr_product;
-						curr_num = 0;
-						arg_count = 0;
-						curr_product = 1;
 						state = 0;
 					}
 					else {
-						// This was an invalid mul operation
+						// This was an invalid mul operation.
+						// Reset state.
 						state = 0;
+					}
+					if(state == 0) {
+						// We have either finished a valid op, or
+						// it was invalid, regardless we reset
+						// these vars.
+						curr_num = 0;
+						arg_count = 0;
+						curr_product = 1;
 					}
 					break;
 
