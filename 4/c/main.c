@@ -100,22 +100,23 @@ int sign_num(int value) {
 }
 
 int main(int argc, char *argv[]) {
-	int row_count = 0;
-	int row_alloc = 4;
-	int curr_value = 0;
-	int curr_state = 0;
-	Cell *curr_cell_ptr = NULL;
-	Cell *next_cell_ptr =  NULL;
-	int curr_char = 0;
-	int word_count = 0;
-	char curr_line[1024];
-	int curr_line_len = 0;
-	FILE *f;
-	int curr_direction[2] = { 0, 0 };
-	int state_assignment = 0;
-	int state_idx = 0;
-	Row *row_ptr;
-	Row *rows = malloc(sizeof(Row) * row_alloc);
+	int row_count = 0; // Current row index
+	int row_alloc = 4; // Current allocation size of rows
+	int curr_value = 0; // Current value determined by curr_char
+	int curr_state = 0; // Current state 
+	Cell *curr_cell_ptr = NULL; // Current cell
+	Cell *next_cell_ptr =  NULL; // Neighboring cell targeted for a modification 
+	int curr_char = 0; // Current character read in from the input
+	int word_count = 0; // The total number of instances of "xmas" found
+	int cross_mas_count = 0; // The total number of occurences of mas crossing
+	char curr_line[1024]; // The buffer for the current line read in from the input.
+	int curr_line_len = 0; // The length of the line read in from the input 
+	FILE *f; // The input file to read from
+	int curr_direction[2] = { 0, 0 }; // The current direction used to target a neighboring cell.
+	int state_assignment = 0; // Value to assign to a cell neighboring an X or S.
+	int state_idx = 0; // Current state index, corresponding to a direction (see mapping).
+	Row *row_ptr; // Points to a target row for modification, may or may not be current row.
+	Row *rows = malloc(sizeof(Row) * row_alloc); // Collection of all rows.
 
 	for(int i = 0; i < row_alloc; i++) {
 		row_init(&rows[i], 128);
@@ -183,7 +184,8 @@ int main(int argc, char *argv[]) {
 							word_count++;
 						}
 						break;
-					case 4: if(curr_char == 'S') {
+					case 4: 
+						if(curr_char == 'S') {
 							// We've finished a word
 							word_count++;
 						}
