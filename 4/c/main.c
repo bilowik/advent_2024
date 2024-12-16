@@ -8,6 +8,10 @@
 	int y_direction;
 } Statetracker;*/
 
+typedef struct State {
+	int xmas_state: 4;
+	int cross_mas_state: 4;
+} State;
 
 typedef struct Cell {
 	// Values:
@@ -28,7 +32,7 @@ typedef struct Cell {
 	// State value of 0 means there's no existing word being bulit
 	// from that direction.
 	// The value in the 0th index is unused.
-	int states[5]; 
+	State states[5]; 
 } Cell;
 
 void cell_init(Cell *self, int value) {
@@ -76,13 +80,6 @@ Cell *row_get_ref(Row *self, int idx) {
 	return &(self->cells[idx]);
 }
 
-// -1 are essentially invalid directions since 
-// we only ever need to go down or to the right.
-const int DIRECTION_STATE_INDEX_MAP[2][3] = {
-	{ 0, 0, 1 },
-	{ 4, 3, 2 },
-};
-
 const int STATE_INDEX_DIRECTION_MAP[5][2] = {
 	{-0, 0}, // Unused.
 	{ 1, 0 },
@@ -114,6 +111,7 @@ int main(int argc, char *argv[]) {
 	FILE *f; // The input file to read from
 	int curr_direction[2] = { 0, 0 }; // The current direction used to target a neighboring cell.
 	int state_assignment = 0; // Value to assign to a cell neighboring an X or S.
+	int cross_mas_state_assignment = 0; // Value to assign to a cell neigboring an X or M.
 	int state_idx = 0; // Current state index, corresponding to a direction (see mapping).
 	Row *row_ptr; // Points to a target row for modification, may or may not be current row.
 	Row *rows = malloc(sizeof(Row) * row_alloc); // Collection of all rows.
@@ -161,7 +159,10 @@ int main(int argc, char *argv[]) {
 				state_assignment = 2;
 			}
 			else if(curr_char == 'S') {
-				state_assignment = -3;
+				state_assignment = cross_mas_state_assignment = -3;
+			}
+			else if(curr_char == 'M') {
+				cross_mas_state_assignment = 3;
 			}
 			if(state_assignment) {
 				for(state_idx = 1; state_idx < 5; state_idx++) {
@@ -171,12 +172,28 @@ int main(int argc, char *argv[]) {
 						continue;
 					}
 					next_cell_ptr = row_get_ref(&rows[row_count + curr_direction[1]], curr_direction[0] + i);
-					next_cell_ptr->states[state_idx] = state_assignment;
+					next_cell_ptr->states[state_idx].xmas_state = state_assignment;
 				}
 			}
+			if(cross_mas_state_assignment) {
+				for(state_idx = 1; state_idx < 5; state_idx++) {
+					memcpy(&curr_direction, STATE_INDEX_DIRECTION_MAP + state_idx, sizeof(int) * 2);
+					if((curr_direction[0] + i) < 0) {
+						// Trying to reach beyond the left edge.
+						continue;
+					}
+					next_cell_ptr = row_get_ref(&rows[row_count + curr_direction[1]], curr_direction[0] + i);
+					next_cell_ptr->states[state_idx].cross_mas_state = cross_mas_state_assignment;
+					//printf("Setting %d at idx %d\n", cross_mas_state_assignment, state_idx);
+				}
+
+			}
 			state_assignment = 0;
+			cross_mas_state_assignment = 0;
 			for(state_idx = 1; state_idx < 5; state_idx++) {
-				curr_state = curr_cell_ptr->states[state_idx];
+				memcpy(&curr_direction, STATE_INDEX_DIRECTION_MAP + state_idx, sizeof(int) * 2);
+				curr_state = curr_cell_ptr->states[state_idx].xmas_state;
+				int curr_cross_mas_state = curr_cell_ptr->states[state_idx].cross_mas_state;
 				switch(abs(curr_state)) {
 					case 1:
 						if(curr_char == 'X') {
@@ -193,7 +210,6 @@ int main(int argc, char *argv[]) {
 					default:
 						if(curr_value == abs(curr_state)) {
 							// We are following a potential word
-							memcpy(&curr_direction, STATE_INDEX_DIRECTION_MAP + state_idx, sizeof(int) * 2);
 							if((i + curr_direction[0]) < 0) {
 								// Goes off left edge, do nothing
 								break;
@@ -201,10 +217,44 @@ int main(int argc, char *argv[]) {
 							row_ptr = &rows[row_count + curr_direction[1]];
 							next_cell_ptr = row_get_ref(row_ptr, i + curr_direction[0]);
 							// +1 to the second value to offset into the correct spot.
-							int d = DIRECTION_STATE_INDEX_MAP[curr_direction[1]][curr_direction[0] + 1];
-							next_cell_ptr->states[DIRECTION_STATE_INDEX_MAP[curr_direction[1]][curr_direction[0] + 1]] = curr_state + 1;
+							next_cell_ptr->states[state_idx].xmas_state = curr_state + 1;
 
 
+						}
+						break;
+				}
+				switch(abs(curr_cross_mas_state)) {
+					case 2:
+					case 4:
+						// We have completed a mas
+						if((state_idx == 2) && (curr_value == abs(curr_cross_mas_state))) {
+							//printf("Completed a mas\n");
+							// We are on the 'backslash' diagonal.
+							// Check back two cells to see if it is also
+							// a valid mas across the opposite diagonal.
+							next_cell_ptr = row_get_ref(&rows[row_count], i - 2);
+							//printf("Checking cell %d\n", i - 2);
+
+							// 2 bc we need to + 1 to offset into the correct spot.
+							int next_state = abs(next_cell_ptr->states[4].cross_mas_state);
+							//printf("Next state: %d\n", next_state);
+							if(((next_state == 2) || (next_state == 4)) && (next_state == next_cell_ptr->value)) {
+								cross_mas_count++;
+							}
+								
+						}
+						break;
+					case 3:
+						if(curr_char == 'A') {
+							if((i + curr_direction[0]) < 0) {
+								// Goes off left edge, do nothing
+								break;
+							}
+							row_ptr = &rows[row_count + curr_direction[1]];
+							next_cell_ptr = row_get_ref(row_ptr, i + curr_direction[0]);
+							// +1 to the second value to offset into the correct spot.
+							next_cell_ptr->states[state_idx].cross_mas_state = curr_cross_mas_state + 1;
+							
 						}
 						break;
 				}
@@ -214,8 +264,19 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	printf("%d\n", word_count);	
+	printf("%d\n", word_count);
+	printf("%d\n", cross_mas_count);
 	for(int i = 0; i < row_alloc; i++) {
+		/*
+		for(int j = 0; j < rows[i].len; j++) {
+			Cell *curr_cell = row_get_ref(&rows[i], j);
+			printf("[%d:", curr_cell->value);
+			for(int k = 0; k < 5; k++) {
+				printf(" %d", curr_cell->states[k].cross_mas_state);
+			}
+			printf("], ");
+		}
+		printf("\n");*/
 		row_destroy(&rows[i]);
 	}
 	free(rows);
