@@ -142,9 +142,9 @@ int main(int argc, char **argv) {
 				guard_pos[0] += offset[0];
 				guard_pos[1] += offset[1];
 				if(
-						(guard_pos[0] < 0) 		||
+						(guard_pos[0] < 0) 			||
 						(guard_pos[0] >= map_width)	||
-						(guard_pos[1] < 0) 		||
+						(guard_pos[1] < 0) 			||
 						(guard_pos[1] >= map_height)
 				) {
 					// We've hit the end of the map.
